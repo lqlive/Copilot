@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Copilot.Provider.GitLab/Copilot.Provider.GitLab.csproj" Id="6235f114-f0e5-4535-98f0-c46219f8cf35" />
+    <Project Path="src/Copilot.Agent/Copilot.Agent.csproj" Id="590f2353-cbf4-4e13-8271-7a520ba62b62" />
+    <Project Path="src/Copilot.Core/Copilot.Core.csproj" Id="f8d0ef97-16be-4f8a-956d-fe538724d5b8" />
+    <Project Path="src/Copilot/Copilot.csproj" />
+  </Folder>
+</Solution>

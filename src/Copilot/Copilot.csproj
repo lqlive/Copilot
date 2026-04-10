@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Copilot.Provider.GitLab\Copilot.Provider.GitLab.csproj" />
+    <ProjectReference Include="..\Copilot.Core\Copilot.Core.csproj" />
+  </ItemGroup>
+
+</Project>

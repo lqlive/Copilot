@@ -5,4 +5,7 @@
     <Project Path="src/Copilot.Core/Copilot.Core.csproj" Id="f8d0ef97-16be-4f8a-956d-fe538724d5b8" />
     <Project Path="src/Copilot/Copilot.csproj" />
   </Folder>
+  <Project Path="docker-compose.dcproj">
+    <Build />
+  </Project>
 </Solution>

@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "Copilot.Agent": {
+      "commandName": "Project"
+    },
+    "Container (Dockerfile)": {
+      "commandName": "Docker"
+    }
+  }
+}

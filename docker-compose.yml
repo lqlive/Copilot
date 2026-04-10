@@ -1,0 +1,13 @@
+services:
+  copilot:
+    image: ${DOCKER_REGISTRY-}copilot
+    build:
+      context: .
+      dockerfile: src/Copilot/Dockerfile
+
+  copilot.agent:
+    image: ${DOCKER_REGISTRY-}copilotagent
+    build:
+      context: .
+      dockerfile: src/Copilot.Agent/Dockerfile
+

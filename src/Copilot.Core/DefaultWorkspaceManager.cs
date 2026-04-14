@@ -28,7 +28,6 @@ public class DefaultWorkspaceManager : IWorkspaceManager
             _workspaceOptions.BaseTempPath ?? Path.Combine(Path.GetTempPath(), "copilot"),
             $"{Sanitize(repositoryId)}-{Guid.NewGuid():N}");
 
-
         Directory.CreateDirectory(workspacePath);
         Log.RepositoryCloning(_logger, repositoryId, branch, workspacePath);
 

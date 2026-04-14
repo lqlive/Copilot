@@ -1,5 +1,4 @@
-﻿using System.IO;
-using StackExchange.Redis;
+﻿using StackExchange.Redis;
 
 namespace Copilot.Core.Configuration;
 

@@ -1,9 +1,9 @@
-﻿using System.Collections.Concurrent;
-using Copilot.Core.Abstractions;
+﻿using StackExchange.Redis;
 using Copilot.Core.Models;
+using Copilot.Core.Abstractions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using StackExchange.Redis;
+using System.Collections.Concurrent;
 
 namespace Copilot.Core;
 

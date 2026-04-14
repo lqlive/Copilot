@@ -50,7 +50,6 @@ internal sealed class CopilotTaskDispatcher : ITaskDispatcher
         var handler = _services.GetRequiredKeyedService<ICommandHandler>("pullRequestComment");
         return handler.HandleAsync(task, cancellationToken);
     }
-
     private static class Log
     {
         private static readonly Action<ILogger, string, CopilotEventType, Exception?> _taskDispatching =

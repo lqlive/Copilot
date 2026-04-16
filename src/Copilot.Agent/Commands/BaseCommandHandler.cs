@@ -32,7 +32,7 @@ internal abstract class BaseCommandHandler : ICommandHandler
     protected async Task<ConversationSession> GetOrCreateSessionAsync(
       CopilotTask task, CancellationToken ct)
     {
-        return await SessionStore.GetAsync(task.Event.SessionKey, ct)
+        return await SessionStore.GetOrCreateAsync(task.Event.SessionKey, ct)
                ?? new ConversationSession
                {
                    ResourceUrl = task.Event.ResourceUrl,
@@ -91,6 +91,11 @@ internal abstract class BaseCommandHandler : ICommandHandler
         session.LastActiveAt = DateTimeOffset.UtcNow;
         session.Messages.Add(new ConversationMessage(MessageRole.User, prompt));
         session.Messages.Add(new ConversationMessage(MessageRole.Assistant, result));
+
+        await SessionStore.UpdateAsync(
+            task.Event.SessionKey,
+            session,
+            cancellationToken);
 
         return result;
     }

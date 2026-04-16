@@ -1,7 +1,10 @@
 ﻿using Copilot.Core;
 using Copilot.Core.Abstractions;
 using Copilot.Core.Configuration;
+using Microsoft.Extensions.Caching.Hybrid;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Microsoft.Extensions.DependencyInjection;
 
@@ -13,10 +16,10 @@ public static class ServiceCollectionExtensions
     {
         services
             .AddCopilotCoreOptions(configuration)
+            .AddCopilotSessions(configuration)
             .AddCopilotRedis()
             .AddCopilotQueue()
             .AddCopilotCancellation()
-            .AddCopilotSessions()
             .AddCopilotWorkspace();
 
         return services;
@@ -34,6 +37,9 @@ public static class ServiceCollectionExtensions
 
         services.AddOptions<GitClientOptions>()
             .Bind(configuration.GetSection(GitClientOptions.SectionName));
+
+        services.AddOptions<SessionStoreOptions>()
+            .Bind(configuration.GetSection(SessionStoreOptions.SectionName));
 
         return services;
     }
@@ -63,10 +69,30 @@ public static class ServiceCollectionExtensions
         return services;
     }
 
-    public static IServiceCollection AddCopilotSessions(this IServiceCollection services)
+    public static IServiceCollection AddCopilotSessions(this IServiceCollection services, IConfiguration configuration)
     {
+    
+        var section = configuration.GetSection(SessionStoreOptions.SectionName);
+        if (section.Exists())
+        {
+            var sessionOptions = section.Get<SessionStoreOptions>();
+            services.AddStackExchangeRedisCache(options =>
+            {
+                options.Configuration = sessionOptions?.ConnectionString;
+                options.InstanceName = sessionOptions?.InstanceName;
+            });
+        }
+
         services.AddHybridCache();
-        services.AddSingleton<ISessionStore, HybridCacheSessionStore>();
+        services.AddSingleton<ISessionStore>(sp =>
+        {
+            var options = sp.GetRequiredService<IOptions<SessionStoreOptions>>().Value;
+
+            return new HybridCacheSessionStore(
+                sp.GetRequiredService<HybridCache>(),
+                sp.GetRequiredService<ILogger<HybridCacheSessionStore>>(),
+                options?.Expiration);
+        });
         return services;
     }
 

@@ -22,8 +22,73 @@ public class GitLabWebhookParser : IWebhookParser
         {
             "Note Hook" => ParseNoteHook(payload),
             "Issue Hook" => ParseIssueHook(payload),
+            "Merge Request Hook" => ParseMergeRequestHook(payload),
             _ => null
         };
+    }
+
+    private CopilotEvent? ParseMergeRequestHook(JsonElement payload)
+    {
+        var data = payload.Deserialize<GitLabMergeRequestPayload>();
+        var mergeRequest = data?.ObjectAttributes;
+
+        if (data is null || mergeRequest is null)
+            return null;
+
+        if (!IsSupportedMergeRequestAction(mergeRequest.Action))
+            return null;
+
+        var repositoryId = data.Project?.Id?.ToString();
+        if (string.IsNullOrWhiteSpace(repositoryId))
+            return null;
+
+        var agentUsername = _gitLabClientOptions.AgentUsername;
+
+        if (!WasReviewRequested(data, agentUsername))
+            return null;
+
+        var triggerComment = BuildReviewPrompt(mergeRequest);
+
+        return new CopilotEvent(
+            Platform: "gitlab",
+            RepositoryId: repositoryId,
+            Type: CopilotEventType.PullRequestReview,
+            SessionKey: new SessionKey("gitlab", repositoryId, ConversationScope.PullRequest, mergeRequest.Iid),
+            TriggerComment: triggerComment,
+            AuthorUsername: data.User?.Username,
+            ResourceUrl: mergeRequest.Url
+        );
+    }
+    private static bool IsSupportedMergeRequestAction(string? action) => action is "open" or "update";
+
+    private static bool WasReviewRequested(GitLabMergeRequestPayload payload, string agentUsername)
+    {
+        if (string.IsNullOrWhiteSpace(agentUsername))
+            return false;
+        var comparer = StringComparer.OrdinalIgnoreCase;
+        var changes = payload.Changes?.Reviewers;
+        if (changes is not null)
+        {
+            var assignedNow = changes.Current.Any(x => comparer.Equals(x.Username, agentUsername));
+            if (!assignedNow)
+                return false;
+            var alreadyAssigned = changes.Previous.Any(x => comparer.Equals(x.Username, agentUsername));
+            return !alreadyAssigned;
+        }
+        return payload.Reviewers.Any(x => comparer.Equals(x.Username, agentUsername));
+    }
+
+
+    private static string BuildReviewPrompt(GitLabMergeRequestAttributes mergeRequest)
+    {
+        return
+            $"""
+            Please review this merge request.
+            Title:
+            {mergeRequest.Title}
+            Description:
+            {mergeRequest.Description}
+            """;
     }
 
     private CopilotEvent? ParseNoteHook(JsonElement payload)
@@ -36,7 +101,7 @@ public class GitLabWebhookParser : IWebhookParser
         if (note.Note?.Contains($"@{_gitLabClientOptions.AgentUsername}", StringComparison.OrdinalIgnoreCase) != true)
             return null;
 
-        var repositoryId = data.Project?.PathWithNamespace ?? string.Empty;
+        var repositoryId = data.Project?.Id.ToString() ?? string.Empty;
         var scope = note.NoteableType == "MergeRequest" ? ConversationScope.PullRequest : ConversationScope.Issue;
         var type = note.NoteableType == "MergeRequest" ? CopilotEventType.PullRequestComment : CopilotEventType.IssueComment;
         var resourceId = note.NoteableId;
@@ -63,7 +128,7 @@ public class GitLabWebhookParser : IWebhookParser
         if (!IsSupportedIssueAction(issue.Action))
             return null;
 
-        var repositoryId = data.Project?.Id;
+        var repositoryId = data.Project?.Id.ToString() ?? string.Empty;
         if (repositoryId is null)
             return null;
 
@@ -74,9 +139,9 @@ public class GitLabWebhookParser : IWebhookParser
         {
             return new CopilotEvent(
                 Platform: "gitlab",
-                RepositoryId: repositoryId.ToString(),
+                RepositoryId: repositoryId,
                 Type: CopilotEventType.IssueAssigned,
-                SessionKey: new SessionKey("gitlab", repositoryId.ToString(), ConversationScope.Issue, issue.Id),
+                SessionKey: new SessionKey("gitlab", repositoryId, ConversationScope.Issue, issue.Id),
                 TriggerComment: issue.Description,
                 AuthorUsername: data.User?.Username,
                 ResourceUrl: issue.Url);
@@ -86,9 +151,9 @@ public class GitLabWebhookParser : IWebhookParser
         {
             return new CopilotEvent(
                 Platform: "gitlab",
-                RepositoryId: repositoryId.ToString(),
+                RepositoryId: repositoryId,
                 Type: CopilotEventType.IssueUnassigned,
-                SessionKey: new SessionKey("gitlab", repositoryId.ToString(), ConversationScope.Issue, issue.Id),
+                SessionKey: new SessionKey("gitlab", repositoryId, ConversationScope.Issue, issue.Id),
                 TriggerComment: null,
                 AuthorUsername: data.User?.Username,
                 ResourceUrl: issue.Url);

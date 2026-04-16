@@ -4,6 +4,7 @@ namespace Copilot.Core.Abstractions;
 
 public interface ISessionStore
 {
-    Task<ConversationSession?> GetAsync(SessionKey key, CancellationToken cancellationToken = default);
+    Task<ConversationSession?> GetOrCreateAsync(SessionKey key, CancellationToken cancellationToken = default);
+    Task UpdateAsync(SessionKey key, ConversationSession session, CancellationToken cancellationToken = default);
     Task RemoveAsync(SessionKey key, CancellationToken cancellationToken = default);
 }

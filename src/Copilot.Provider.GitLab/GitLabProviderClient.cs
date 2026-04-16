@@ -1,6 +1,9 @@
-﻿using GitLabApiClient;
-using Copilot.Core.Models;
+﻿using System.Text;
+
 using Copilot.Core.Abstractions;
+using Copilot.Core.Models;
+
+using GitLabApiClient;
 using GitLabApiClient.Models.MergeRequests.Requests;
 using GitLabApiClient.Models.Notes.Requests;
 
@@ -51,8 +54,32 @@ public class GitLabProviderClient : IGitProviderClient
         var mergeRequest = await _gitLabClient.MergeRequests.GetAsync(projectId, (int)resourceId);
 
         var diffs = await _gitLabClient.Commits.GetDiffsAsync(projectId, mergeRequest.Sha);
+        if (diffs is null || diffs.Count == 0)
+            return string.Empty;
 
-        throw new NotImplementedException("Getting pull request diff is not implemented yet.");
+        var sb = new StringBuilder();
+        foreach (var diff in diffs)
+        {
+            var oldPath = string.IsNullOrWhiteSpace(diff.OldPath) ? diff.NewPath : diff.OldPath;
+            var newPath = string.IsNullOrWhiteSpace(diff.NewPath) ? diff.OldPath : diff.NewPath;
+            sb.AppendLine($"diff --git a/{oldPath} b/{newPath}");
+            if (diff.IsNewFile)
+                sb.AppendLine("new file mode 100644");
+            if (diff.IsDeletedFile)
+                sb.AppendLine("deleted file mode 100644");
+            if (diff.IsRenamedFile)
+            {
+                sb.AppendLine($"rename from {oldPath}");
+                sb.AppendLine($"rename to {newPath}");
+            }
+            sb.AppendLine($"--- a/{oldPath}");
+            sb.AppendLine($"+++ b/{newPath}");
+            if (!string.IsNullOrWhiteSpace(diff.DiffText))
+                sb.AppendLine(diff.DiffText);
+            sb.AppendLine();
+        }
+
+        return sb.ToString();
     }
 
     public  async Task PostIssueCommentAsync(string repositoryId, long resourceId, string body, CancellationToken ct = default)

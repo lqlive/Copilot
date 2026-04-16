@@ -33,13 +33,19 @@ internal sealed class ReviewCommandHandler : BaseCommandHandler
         var diff = await GitProviderClient.GetPullRequestDiffAsync(
             task.Event.RepositoryId, task.Event.SessionKey.ResourceId, cancellationToken);
 
-        session.Messages[^1] = session.Messages[^1] with
-        {
-            Content = $"{task.Event.TriggerComment}\n\n```diff\n{diff}\n```"
-        };
-        var response = await InvokeAsync(session, SystemPrompt, task, cancellationToken: cancellationToken);
+        var prompt = $@"
+            {SystemPrompt}
 
-        await GitProviderClient.PostIssueCommentAsync(
+            Please review this merge request.
+            {task.Event.TriggerComment}
+
+            ```diff
+            {diff}
+            ```";
+
+        var response = await InvokeAsync(session, prompt, task, cancellationToken: cancellationToken);
+
+        await GitProviderClient.PostPullRequestCommentAsync(
             task.Event.RepositoryId,
             task.Event.SessionKey.ResourceId,
             response, cancellationToken);

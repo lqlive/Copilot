@@ -27,7 +27,7 @@ internal sealed class HybridCacheSessionStore : ISessionStore
         };
     }
 
-    public async Task<ConversationSession?> GetAsync(SessionKey key, CancellationToken cancellationToken = default)
+    public async Task<ConversationSession?> GetOrCreateAsync(SessionKey key, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(key);
 
@@ -51,6 +51,33 @@ internal sealed class HybridCacheSessionStore : ISessionStore
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
             Log.GetSessionFailed(_logger, cacheKey, ex);
+            throw;
+        }
+    }
+
+    public async Task UpdateAsync(
+        SessionKey key,
+        ConversationSession session,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(key);
+        ArgumentNullException.ThrowIfNull(session);
+
+        var cacheKey = key.ToString();
+
+        try
+        {
+            session.LastActiveAt = DateTimeOffset.UtcNow;
+            await _cache.SetAsync(
+                cacheKey,
+                session,
+                _cacheEntryOptions,
+                cancellationToken: cancellationToken);
+            Log.SessionUpdated(_logger, cacheKey);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            Log.UpdateSessionFailed(_logger, cacheKey, ex);
             throw;
         }
     }
@@ -100,6 +127,18 @@ internal sealed class HybridCacheSessionStore : ISessionStore
                 new EventId(4, nameof(DeleteSessionFailed)),
                 "Failed to delete session for {Key}");
 
+        private static readonly Action<ILogger, string, Exception?> _sessionUpdated =
+            LoggerMessage.Define<string>(
+                LogLevel.Debug,
+                new EventId(5, nameof(SessionUpdated)),
+                "Session updated for {Key}");
+
+        private static readonly Action<ILogger, string, Exception?> _updateSessionFailed =
+            LoggerMessage.Define<string>(
+                LogLevel.Error,
+                new EventId(6, nameof(UpdateSessionFailed)),
+                "Failed to update session for {Key}");
+
         public static void SessionRetrieved(ILogger logger, string key) =>
             _sessionRetrieved(logger, key, null);
 
@@ -111,5 +150,11 @@ internal sealed class HybridCacheSessionStore : ISessionStore
 
         public static void DeleteSessionFailed(ILogger logger, string key, Exception? exception) =>
             _deleteSessionFailed(logger, key, exception);
+
+        public static void SessionUpdated(ILogger logger, string key) =>
+            _sessionUpdated(logger, key, null);
+
+        public static void UpdateSessionFailed(ILogger logger, string key, Exception? exception) =>
+            _updateSessionFailed(logger, key, exception);
     }
 }

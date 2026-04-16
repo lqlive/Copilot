@@ -33,7 +33,7 @@ internal sealed class AssignCommandHandler : BaseCommandHandler
             await GitProviderClient.PostIssueCommentAsync(
              task.Event.RepositoryId,
              task.Event.SessionKey.ResourceId,
-                "The task has been assigned to @Copilot", ct);
+                "The task has been assigned to AI", ct);
 
             workspacePath = await _workspaceManager.CloneAsync(
                 task.Event.RepositoryId, repository.DefaultBranch, repository.HttpUrl, ct);

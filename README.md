@@ -1,6 +1,6 @@
 # Copilot
 
-`Copilot` is an experimental GitLab-focused automation service that can join issue and pull request conversations, review changes, modify code, and push updates back to the repository.
+`Copilot` is an experimental service that brings GitHub Copilot capabilities to GitLab, enabling it to join issue and pull request conversations, review changes, modify code, and push updates back to the repository.
 
 ## What It Can Do
 

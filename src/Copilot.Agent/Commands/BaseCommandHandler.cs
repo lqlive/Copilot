@@ -92,10 +92,7 @@ internal abstract class BaseCommandHandler : ICommandHandler
         session.Messages.Add(new ConversationMessage(MessageRole.User, prompt));
         session.Messages.Add(new ConversationMessage(MessageRole.Assistant, result));
 
-        await SessionStore.UpdateAsync(
-            task.Event.SessionKey,
-            session,
-            cancellationToken);
+        await SessionStore.UpdateAsync(task.Event.SessionKey, session, cancellationToken);
 
         return result;
     }

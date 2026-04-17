@@ -71,7 +71,6 @@ public static class ServiceCollectionExtensions
 
     public static IServiceCollection AddCopilotSessions(this IServiceCollection services, IConfiguration configuration)
     {
-    
         var section = configuration.GetSection(SessionStoreOptions.SectionName);
         if (section.Exists())
         {

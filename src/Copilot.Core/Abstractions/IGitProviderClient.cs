@@ -16,6 +16,4 @@ public interface IGitProviderClient
         string repositoryId, string title,
         string sourceBranch, string targetBranch,
         string description, CancellationToken ct = default);
-
-
 }

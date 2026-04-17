@@ -4,6 +4,7 @@ using Copilot.Agent.Configuration;
 using Copilot.Core.Abstractions;
 using GitHub.Copilot.SDK;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 
 namespace Microsoft.Extensions.DependencyInjection;
 
@@ -37,7 +38,15 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddCopilotClient(
         this IServiceCollection services)
     {
-        services.AddSingleton<CopilotClient>();
+        services.AddSingleton(sp =>
+        {
+            var options = sp.GetRequiredService<IOptions<CopilotOptions>>().Value;
+            return new CopilotClient(new CopilotClientOptions
+            {
+                CliPath = options?.CliPath,
+                GitHubToken = options?.GitHubToken
+            });
+        });
         return services;
     }
 
